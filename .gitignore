@@ -1,0 +1,6 @@
+.env
+config.json
+node_modules/
+data/*
+!data/.gitkeep
+*.icuewidget

@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>Home Board — Add</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #000000;
+  --card-bg: #000000;
+  --dot: rgba(255, 255, 255, 0.07);
+
+  --surface:        rgba(255, 255, 255, 0.04);
+  --surface-input:  rgba(22, 22, 22, 0.95);
+  --surface-pill:   rgba(25, 25, 25, 0.9);
+  --surface-active: rgba(255, 255, 255, 0.09);
+
+  --fg:           #eeeeee;
+  --fg-secondary: #b4b4b4;
+  --fg-muted:     #7b7b7b;
+  --fg-disabled:  #606060;
+
+  --border-subtle:  rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.11);
+  --border-medium:  rgba(255, 255, 255, 0.17);
+  --border-strong:  rgba(255, 255, 255, 0.28);
+  --border-check:   rgba(255, 255, 255, 0.25);
+  --border-dark:    #2a2a2a;
+
+  --accent:      #71d083;
+  --accent-text: #121b17;
+  --submit-bg:   #ffffff;
+  --submit-fg:   rgba(0, 0, 0, 0.8);
+  --failed:      #ff977d;
+
+  --radius-btn: 12px;
+  --radius-card: 24px;
+  --radius-input: 24px;
+  --radius-pill: 9999px;
+  --radius-sm: 6px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ececeb;
+    --card-bg: #ffffff;
+    --dot: rgba(0, 0, 0, 0.07);
+
+    --surface:        rgba(0, 0, 0, 0.035);
+    --surface-input:  #ffffff;
+    --surface-pill:   rgba(0, 0, 0, 0.03);
+    --surface-active: rgba(0, 0, 0, 0.08);
+
+    --fg:           #1c1c1c;
+    --fg-secondary: #4d4d4d;
+    --fg-muted:     #6e6e6e;
+    --fg-disabled:  #9b9b9b;
+
+    --border-subtle:  rgba(0, 0, 0, 0.06);
+    --border-default: rgba(0, 0, 0, 0.12);
+    --border-medium:  rgba(0, 0, 0, 0.18);
+    --border-strong:  rgba(0, 0, 0, 0.3);
+    --border-check:   rgba(0, 0, 0, 0.28);
+    --border-dark:    #d8d8d6;
+
+    --accent:      #237f3d;
+    --accent-text: #ffffff;
+    --submit-bg:   #1c1c1c;
+    --submit-fg:   #ffffff;
+    --failed:      #b0432c;
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dot) 0.6px, transparent 1.4px);
+  background-size: 14px 14px;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell {
+  height: 100vh;
+  height: 100dvh;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0 12px env(safe-area-inset-bottom);
+}
+
+header {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+header .count { color: var(--fg-muted); font-weight: 400; letter-spacing: -0.1px; }
+header .spacer { flex: 1; }
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px currentColor;
+  animation: dot-breathe 2.8s ease-in-out infinite;
+}
+.status-dot.off { background: var(--failed); box-shadow: none; animation: none; }
+@keyframes dot-breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.3 } }
+
+.card {
+  flex: 1;
+  min-height: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-card);
+  overflow-y: auto;
+  padding: 6px;
+  margin-bottom: 12px;
+}
+.card::-webkit-scrollbar { width: 4px; }
+.card::-webkit-scrollbar-track { background: transparent; }
+.card::-webkit-scrollbar-thumb { background: rgba(127,127,127,0.22); border-radius: var(--radius-pill); }
+
+.rem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+}
+.rem:active { background: var(--surface); }
+
+.check {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border-radius: 6px;
+  border: 2px solid var(--border-check);
+  background: transparent;
+  display: grid; place-items: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.check svg { width: 13px; height: 13px; opacity: 0; transition: opacity 0.15s; }
+.rem.done .check { background: var(--accent); border-color: var(--accent); }
+.rem.done .check svg { opacity: 1; }
+
+.body { flex: 1; min-width: 0; }
+.text { font-size: 13px; font-weight: 500; letter-spacing: -0.1px; }
+.meta { font-size: 11px; color: var(--fg-muted); margin-top: 2px; }
+.rem.done .text { color: var(--fg-disabled); text-decoration: line-through; font-weight: 400; }
+
+.del {
+  width: 30px; height: 30px; flex-shrink: 0;
+  border: 0; background: transparent;
+  color: rgba(127, 127, 127, 0.55);
+  border-radius: var(--radius-sm);
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.del:active { background: var(--surface); color: var(--failed); }
+.del svg { width: 14px; height: 14px; }
+
+.empty { padding: 28px 16px; font-size: 13px; color: var(--fg-muted); line-height: 1.6; }
+
+/* ---------- composer ---------- */
+.composer {
+  flex-shrink: 0;
+  background: var(--surface-input);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-input);
+  padding: 14px 8px 8px 18px;
+  transition: border-color 0.3s;
+  margin-bottom: 12px;
+}
+.composer.focused { border-color: var(--border-strong); }
+
+textarea {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  resize: none;
+  outline: none;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 16px; /* iOS zooms below 16 */
+  line-height: 1.45;
+  letter-spacing: -0.1px;
+}
+textarea::placeholder { color: var(--fg-muted); }
+
+.toolbar { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+
+.who {
+  font-family: inherit;
+  font-size: 12px; font-weight: 500; letter-spacing: -0.1px;
+  padding: 4px 12px;
+  min-height: 32px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.who[aria-pressed="true"] {
+  background: var(--surface-active);
+  border-color: var(--border-medium);
+  color: var(--fg);
+}
+
+.submit {
+  margin-left: auto;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--submit-bg);
+  color: var(--submit-fg);
+  font-size: 17px; font-weight: 600;
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.submit:disabled {
+  background: rgba(127, 127, 127, 0.14);
+  color: rgba(127, 127, 127, 0.6);
+  cursor: not-allowed;
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <span class="status-dot" id="conn"></span>
+    <span>Home board</span>
+    <span class="count" id="count"></span>
+    <span class="spacer"></span>
+  </header>
+
+  <div class="card" id="list"></div>
+
+  <div class="composer" id="composer">
+    <textarea id="input" rows="2" placeholder="Add a reminder…" enterkeyhint="send"></textarea>
+    <div class="toolbar" id="who"></div>
+  </div>
+</div>
+
+<script>
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 7"/></svg>';
+const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9.5 7V5h5v2M6.5 7l1 13h9l1-13"/></svg>';
+
+const input = document.getElementById("input");
+const composer = document.getElementById("composer");
+let people = [];
+let me = null;
+let items = [];
+
+try { me = localStorage.getItem("homeboard.me"); } catch (e) {}
+
+input.addEventListener("focus", () => composer.classList.add("focused"));
+input.addEventListener("blur", () => composer.classList.remove("focused"));
+input.addEventListener("input", renderToolbar);
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
+});
+
+function ago(iso) {
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return m + "m ago";
+  const h = Math.round(m / 60);
+  if (h < 24) return h + "h ago";
+  return Math.round(h / 24) + "d ago";
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function renderToolbar() {
+  const ready = input.value.trim().length > 0;
+  document.getElementById("who").innerHTML =
+    people.map((p) =>
+      '<button class="who" data-who="' + esc(p) + '" aria-pressed="' + (p === me) + '">' + esc(p) + '</button>'
+    ).join("") +
+    '<button class="submit" id="send"' + (ready ? "" : " disabled") + ' aria-label="Add">&uarr;</button>';
+}
+
+document.getElementById("who").addEventListener("click", (e) => {
+  const w = e.target.closest(".who");
+  if (w) {
+    me = w.dataset.who;
+    try { localStorage.setItem("homeboard.me", me); } catch (err) {}
+    renderToolbar();
+    return;
+  }
+  if (e.target.closest("#send")) submit();
+});
+
+function renderList() {
+  const sorted = items.slice().sort((a, b) => {
+    if (!!a.doneAt !== !!b.doneAt) return a.doneAt ? 1 : -1;
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+
+  const open = items.filter((r) => !r.doneAt).length;
+  document.getElementById("count").textContent = open ? open + " open" : "all clear";
+
+  document.getElementById("list").innerHTML = sorted.length
+    ? sorted.map((r) => {
+        const meta = [r.by, ago(r.createdAt)].filter(Boolean).join(" \u00b7 ");
+        return '<div class="rem' + (r.doneAt ? " done" : "") + '" data-id="' + r.id + '">' +
+          '<button class="check" role="checkbox" aria-checked="' + (!!r.doneAt) + '" aria-label="Mark done">' + CHECK + '</button>' +
+          '<div class="body"><div class="text">' + esc(r.text) + '</div><div class="meta">' + meta + '</div></div>' +
+          '<button class="del" aria-label="Delete">' + TRASH + '</button>' +
+        '</div>';
+      }).join("")
+    : '<div class="empty">Nothing on the list yet.<br>Whatever you add here shows up on the board at home.</div>';
+}
+
+document.getElementById("list").addEventListener("click", async (e) => {
+  const row = e.target.closest(".rem");
+  if (!row) return;
+  const id = row.dataset.id;
+
+  if (e.target.closest(".del")) {
+    items = items.filter((r) => r.id !== id);
+    renderList();
+    await fetch("/api/reminders/" + id + "?src=add", { method: "DELETE" }).catch(() => {});
+    return;
+  }
+
+  // optimistic toggle
+  const item = items.find((r) => r.id === id);
+  if (item) item.doneAt = item.doneAt ? null : new Date().toISOString();
+  renderList();
+  await fetch("/api/reminders/" + id + "/toggle?src=add", { method: "POST" }).catch(() => {});
+  load();
+});
+
+async function submit() {
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  renderToolbar();
+
+  // optimistic insert so it feels instant on a phone
+  const temp = { id: "tmp-" + Date.now(), text, by: me, createdAt: new Date().toISOString(), doneAt: null };
+  items.unshift(temp);
+  renderList();
+
+  try {
+    const res = await fetch("/api/reminders?src=add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, by: me })
+    });
+    if (!res.ok) throw new Error("failed");
+    await load();
+  } catch (e) {
+    document.getElementById("conn").classList.add("off");
+  }
+}
+
+async function load() {
+  try {
+    const [d, r] = await Promise.all([
+      fetch("/api/data", { cache: "no-store" }).then((x) => x.json()),
+      fetch("/api/reminders", { cache: "no-store" }).then((x) => x.json())
+    ]);
+    people = d.people && d.people.length ? d.people : ["Me"];
+    if (!me || people.indexOf(me) === -1) me = people[0];
+    items = r.reminders || [];
+    document.getElementById("conn").classList.remove("off");
+    renderToolbar();
+    renderList();
+  } catch (e) {
+    document.getElementById("conn").classList.add("off");
+  }
+}
+
+load();
+setInterval(load, 20000);
+</script>
+</body>
+</html>

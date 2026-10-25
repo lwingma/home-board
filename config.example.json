@@ -1,0 +1,173 @@
+{
+  "port": 7879,
+  "timezone": "Europe/London",
+  "units": {
+    "temperature": "celsius",
+    "wind": "mph",
+    "distance": "miles"
+  },
+  "home": {
+    "label": "Home",
+    "lat": 55.8686,
+    "lon": -4.2906
+  },
+  "activeHours": {
+    "start": 6,
+    "end": 23
+  },
+  "refreshMinutes": {
+    "traffic": 5,
+    "weather": 15,
+    "fixtures": 360,
+    "events": 360,
+    "usage": 5
+  },
+  "claudeUsage": {
+    "enabled": false,
+    "url": "http://127.0.0.1:7878/usage.json"
+  },
+  "destinations": [
+    {
+      "id": "work",
+      "label": "Work",
+      "sub": "Central Station",
+      "lat": 55.8591,
+      "lon": -4.2581,
+      "mode": "car"
+    },
+    {
+      "id": "shops",
+      "label": "Silverburn",
+      "sub": "Pollok",
+      "lat": 55.8216,
+      "lon": -4.3398,
+      "mode": "car"
+    },
+    {
+      "id": "airport",
+      "label": "Glasgow Airport",
+      "sub": "Paisley",
+      "lat": 55.8719,
+      "lon": -4.4331,
+      "mode": "car"
+    }
+  ],
+  "reminders": {
+    "people": [
+      "Alex",
+      "Sam"
+    ],
+    "keepDoneHours": 12
+  },
+  "apiToken": "",
+  "capture": {
+    "until": ""
+  },
+  "matchdays": {
+    "enabled": true,
+    "apiKey": "123",
+    "corridorKm": 4,
+    "alertFromHoursBefore": 4,
+    "alertUntilHoursAfter": 2.5,
+    "venues": [
+      {
+        "id": "ibrox",
+        "label": "Ibrox",
+        "lat": 55.8531,
+        "lon": -4.3092,
+        "teams": [
+          "Rangers"
+        ],
+        "severity": "high"
+      },
+      {
+        "id": "celtic-park",
+        "label": "Celtic Park",
+        "lat": 55.8497,
+        "lon": -4.2055,
+        "teams": [
+          "Celtic"
+        ],
+        "corridorKm": 5.5,
+        "alertFromHoursBefore": 5,
+        "severity": "high"
+      },
+      {
+        "id": "hampden",
+        "label": "Hampden",
+        "lat": 55.8258,
+        "lon": -4.2522,
+        "teams": [
+          "Scotland"
+        ]
+      }
+    ]
+  },
+  "events": {
+    "enabled": true,
+    "minCapacity": 8000,
+    "corridorKm": 4,
+    "alertFromHoursBefore": 3,
+    "alertUntilHoursAfter": 2,
+    "venues": [
+      {
+        "id": "hydro",
+        "label": "OVO Hydro",
+        "tmVenueId": "KovZ9177Sq0",
+        "lat": 55.86087,
+        "lon": -4.288154,
+        "capacity": 14300,
+        "severity": "high"
+      },
+      {
+        "id": "sec-centre",
+        "label": "SEC Centre",
+        "tmVenueId": "KovZ9177ly7",
+        "lat": 55.86087,
+        "lon": -4.288154,
+        "capacity": 10000
+      },
+      {
+        "id": "sec-armadillo",
+        "label": "SEC Armadillo",
+        "tmVenueId": "KovZ9177sSV",
+        "lat": 55.86087,
+        "lon": -4.288154,
+        "capacity": 3000
+      },
+      {
+        "id": "hampden-events",
+        "label": "Hampden",
+        "tmVenueId": "KovZ9177mPV",
+        "lat": 55.825241,
+        "lon": -4.253201,
+        "capacity": 51866,
+        "alertFromHoursBefore": 4,
+        "alertUntilHoursAfter": 2.5,
+        "severity": "high"
+      },
+      {
+        "id": "glasgow-green",
+        "label": "Glasgow Green",
+        "tmVenueId": "KovZ9177mGV",
+        "lat": 55.851214,
+        "lon": -4.236986,
+        "capacity": 50000,
+        "alertFromHoursBefore": 4,
+        "alertUntilHoursAfter": 2.5,
+        "severity": "high"
+      },
+      {
+        "id": "bellahouston",
+        "label": "Bellahouston Park",
+        "tmVenueId": "KovZ9177ml0",
+        "lat": 55.847332,
+        "lon": -4.313765,
+        "capacity": 45000,
+        "alertFromHoursBefore": 4,
+        "alertUntilHoursAfter": 2.5,
+        "severity": "high"
+      }
+    ]
+  }
+}

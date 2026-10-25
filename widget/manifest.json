@@ -1,0 +1,16 @@
+{
+  "author": "Wing Studios",
+  "id": "net.wingstudios.home-board",
+  "name": "Home Board",
+  "description": "Weather, live drive times and shared reminders on one strip.",
+  "version": "0.1.0",
+  "preview_icon": "resources/icon.svg",
+  "min_framework_version": "1.0.0",
+  "os": [
+    { "platform": "windows" }
+  ],
+  "supported_devices": [
+    { "type": "dashboard_lcd", "features": ["sensor-screen"] }
+  ],
+  "interactive": true
+}

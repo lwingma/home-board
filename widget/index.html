@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src *;">
+  <title>tr('Home Board')</title>
+  <link rel="icon" type="image/svg+xml" href="resources/icon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #121212;
+  --card-bg: #1c1c1c;
+  --dot: rgba(255, 255, 255, 0.055);
+
+  --rgb-clear: 113, 208, 131;
+  --rgb-busy:  255, 202, 22;
+  --rgb-heavy: 255, 151, 125;
+
+  --surface:        rgba(255, 255, 255, 0.04);
+  --surface-alt:    rgba(255, 255, 255, 0.07);
+  --surface-active: rgba(255, 255, 255, 0.09);
+
+  --fg:           #eeeeee;
+  --fg-secondary: #b4b4b4;
+  --fg-muted:     #7b7b7b;
+  --fg-disabled:  #606060;
+
+  --border-subtle:  rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.11);
+  --border-medium:  rgba(255, 255, 255, 0.18);
+  --border-check:   rgba(255, 255, 255, 0.25);
+  --border-dark:    #313131;
+
+  --accent:         #71d083;
+  --accent-text:    #121b17;
+  --status-running: #71d083;
+  --status-stalled: #ffca16;
+  --status-failed:  #ff977d;
+
+  --radius-card: 24px;
+  --radius-pill: 9999px;
+  --radius-sm: 6px;
+  --radius-xs: 5px;
+}
+
+:root[data-theme="light"] {
+  --bg: #ececeb;
+  --card-bg: #ffffff;
+  --dot: rgba(0, 0, 0, 0.07);
+
+  --rgb-clear: 35, 127, 61;
+  --rgb-busy:  138, 97, 8;
+  --rgb-heavy: 176, 67, 44;
+
+  --surface:        rgba(0, 0, 0, 0.035);
+  --surface-alt:    rgba(0, 0, 0, 0.07);
+  --surface-active: rgba(0, 0, 0, 0.08);
+
+  --fg:           #1c1c1c;
+  --fg-secondary: #4d4d4d;
+  --fg-muted:     #6e6e6e;
+  --fg-disabled:  #9b9b9b;
+
+  --border-subtle:  rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-medium:  rgba(0, 0, 0, 0.19);
+  --border-check:   rgba(0, 0, 0, 0.28);
+  --border-dark:    #d8d8d6;
+
+  --accent:         #237f3d;
+  --accent-text:    #ffffff;
+  --status-running: #237f3d;
+  --status-stalled: #8a6108;
+  --status-failed:  #b0432c;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dot) 0.6px, transparent 1.4px);
+  background-size: 14px 14px;
+  background-position: 50% 50%;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+#stage {
+  position: absolute;
+  top: 0; left: 0;
+  width: 2560px;
+  height: 720px;
+  transform-origin: 0 0;
+  padding: 16px;
+}
+
+/* Shown instead of the board when the 2560x720 stage would scale so far down that
+   nothing is readable or tappable. Sits outside #stage so it is never scaled. */
+#toosmall {
+  display: none;
+  position: absolute;
+  inset: 0;
+  padding: 32px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+}
+#toosmall h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+#toosmall p  { font-size: 16px; line-height: 1.5; color: var(--fg-secondary); max-width: 32ch; }
+#toosmall a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  align-self: flex-start;
+}
+#toosmall .note { font-size: 14px; color: var(--fg-muted); }
+
+.board {
+  height: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 660px 940px 1fr;
+  grid-template-rows: 1fr 52px;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.col {
+  padding: 30px 32px 26px;
+  overflow: hidden;
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.col:nth-of-type(3) { border-right: 0; }
+
+.label {
+  font-size: 22px; font-weight: 500; letter-spacing: -0.2px;
+  color: var(--fg-muted);
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 22px; flex-shrink: 0;
+}
+.label .rule { flex: 1; height: 1px; background: var(--border-subtle); }
+.label .meta { color: var(--fg-disabled); font-size: 20px; }
+
+.dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--rgb-clear), 0.7);
+  flex-shrink: 0;
+}
+.dot-pulse { animation: dot-breathe 2.8s ease-in-out infinite; }
+@keyframes dot-breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.3 } }
+
+/* Offline. The board goes on showing the last real payload, so these are the only
+   things distinguishing it from live — make them impossible to miss across a room.
+   No pulse: a breathing dot reads as "receiving", which is the exact lie to avoid. */
+.dot-offline {
+  background: var(--status-failed);
+  box-shadow: 0 0 8px rgba(var(--rgb-heavy), 0.7);
+  animation: none;
+}
+#offlinebar {
+  position: absolute; left: 0; right: 0; top: 0; height: 4px;
+  background: var(--status-failed);
+  opacity: 0; transition: opacity 0.35s ease-out;
+  pointer-events: none;
+}
+body.offline #offlinebar { opacity: 1; }
+
+/* ---------- column 1 ---------- */
+.clock { font-size: 96px; font-weight: 500; line-height: 1; letter-spacing: -2.4px; display: flex; align-items: baseline; gap: 10px; }
+.clock .sec { font-size: 26px; font-weight: 400; letter-spacing: -0.1px; color: var(--fg-disabled); }
+.datestamp { margin-top: 8px; font-size: 22px; letter-spacing: -0.1px; color: var(--fg-muted); }
+
+.wx { margin-top: 32px; display: flex; align-items: center; gap: 20px; }
+.wx-temp { font-size: 68px; font-weight: 500; line-height: 1; letter-spacing: -1.8px; }
+.wx-temp sup { font-size: 26px; font-weight: 400; vertical-align: top; color: var(--fg-muted); }
+.wx-cond { font-size: 26px; font-weight: 500; letter-spacing: -0.2px; color: var(--fg-secondary); }
+.wx-range { font-size: 22px; color: var(--fg-muted); margin-top: 4px; letter-spacing: -0.1px; }
+
+.facts {
+  margin-top: auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px 28px;
+  border-top: 1px solid var(--border-subtle); padding-top: 22px;
+}
+.fact-k { font-size: 20px; color: var(--fg-muted); letter-spacing: -0.1px; }
+.fact-v { font-size: 28px; font-weight: 500; letter-spacing: -0.4px; margin-top: 2px; }
+.fact-v small { font-size: 20px; font-weight: 400; color: var(--fg-muted); margin-left: 4px; letter-spacing: -0.1px; }
+
+/* rain outlook, folded in under the weather it belongs to */
+.outlook {
+  margin-top: 22px; padding-top: 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+.rainline {
+  display: flex; align-items: center; gap: 11px;
+  font-size: 25px; font-weight: 500; letter-spacing: -0.3px;
+  color: var(--fg);
+  margin-bottom: 16px;
+}
+.rainline.dry { color: var(--fg-muted); font-weight: 400; }
+.rainline svg { width: 24px; height: 24px; flex-shrink: 0; }
+.rainline em { font-style: normal; color: var(--fg-muted); font-weight: 400; }
+.strip { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+.hr { text-align: center; }
+.hr-t { font-size: 19px; color: var(--fg-muted); letter-spacing: -0.1px; }
+.hr-bar {
+  position: relative; height: 26px; margin: 6px 0 5px;
+  background: var(--surface-alt); border-radius: var(--radius-pill);
+}
+.hr-bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--accent); border-radius: var(--radius-pill); }
+.hr-temp { font-size: 21px; font-weight: 500; letter-spacing: -0.3px; }
+
+/* ---------- match day notice ---------- */
+#matchday { flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+#matchday:empty { display: none; }
+.match {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(var(--rgb-busy), 0.09);
+  border: 1px solid rgba(var(--rgb-busy), 0.22);
+  font-size: 23px; letter-spacing: -0.2px;
+}
+.match svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--status-stalled); }
+.match .fix { font-weight: 500; color: var(--fg); }
+.match .at { color: var(--fg-secondary); }
+.match .ko { margin-left: auto; color: var(--status-stalled); font-weight: 500; white-space: nowrap; }
+.match .hit { color: var(--fg-muted); font-size: 20px; }
+.match.high {
+  background: rgba(var(--rgb-heavy), 0.10);
+  border-color: rgba(var(--rgb-heavy), 0.26);
+}
+.match.high svg, .match.high .ko { color: var(--status-failed); }
+
+.chip.high {
+  background: rgba(var(--rgb-heavy), 0.13);
+  border-color: rgba(var(--rgb-heavy), 0.26);
+  color: var(--status-failed);
+}
+.chip {
+  font-size: 19px;
+  border-radius: var(--radius-xs);
+  padding: 2px 8px;
+  background: rgba(var(--rgb-busy), 0.12);
+  border: 1px solid rgba(var(--rgb-busy), 0.24);
+  color: var(--status-stalled);
+  white-space: nowrap;
+}
+
+/* ---------- column 2: departures ---------- */
+.rows { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 16px; }
+.row {
+  display: grid; grid-template-columns: 1fr 118px 132px 132px;
+  align-items: center; gap: 14px;
+  min-height: 92px; padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: background 0.2s;
+}
+/* Entry animation runs on the first paint only. Left on .row permanently it replays
+   every time the list is rebuilt, which reads as a flicker on a board that repolls
+   every 15 seconds. */
+.rows.intro .row { opacity: 0; animation: fadeIn 0.35s ease-out forwards; }
+@keyframes fadeIn { to { opacity: 1 } }
+.row:hover { background: var(--surface); }
+.row.clear { box-shadow: inset 3px 0 0 var(--status-running); }
+.row.busy  { box-shadow: inset 3px 0 0 var(--status-stalled); }
+.row.heavy { box-shadow: inset 3px 0 0 var(--status-failed); }
+
+.dest-name { font-size: 28px; font-weight: 500; letter-spacing: -0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dest-meta { font-size: 22px; color: var(--fg-muted); margin-top: 3px; letter-spacing: -0.1px; }
+.arrive { text-align: right; font-size: 26px; color: var(--fg-secondary); letter-spacing: -0.3px; }
+.arrive small { display: block; font-size: 20px; color: var(--fg-disabled); margin-top: 2px; }
+.dur { text-align: right; }
+.dur b { font-size: 44px; font-weight: 500; letter-spacing: -1.2px; }
+.dur span { font-size: 20px; color: var(--fg-muted); margin-left: 5px; letter-spacing: -0.1px; }
+
+.badge-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.trend {
+  font-size: 19px; color: var(--fg-muted); letter-spacing: -0.1px;
+  display: flex; align-items: center; gap: 5px;
+}
+.trend svg { width: 13px; height: 13px; }
+.badge { font-size: 22px; border-radius: var(--radius-xs); padding: 4px 10px; letter-spacing: 0.02em; white-space: nowrap; }
+.badge.clear { background: rgba(var(--rgb-clear), 0.11); border: 1px solid rgba(var(--rgb-clear), 0.24); color: var(--status-running); }
+.badge.busy  { background: rgba(var(--rgb-busy), 0.11);  border: 1px solid rgba(var(--rgb-busy), 0.24);  color: var(--status-stalled); }
+.badge.heavy { background: rgba(var(--rgb-heavy), 0.11); border: 1px solid rgba(var(--rgb-heavy), 0.24); color: var(--status-failed); }
+.badge.dead  { background: var(--surface); border: 1px solid var(--border-subtle); color: var(--fg-disabled); }
+
+/* claude code usage, one line in the status bar. It has lived in two places that both
+   failed: under the departures, where two match/event banners pushed it past the column's
+   overflow:hidden edge, and at the foot of the reminders column, where it took ~150px and
+   left six reminders scrolled with the newest cut off at the top. The status bar is the
+   one strip nothing else competes for. Hidden unless the separate scraper on :7878 is up,
+   so the space stays empty rather than showing a dead panel. */
+/* It is the only thing in the bar allowed to give way. When it runs short of room,
+   whole meters wrap onto a second line that the fixed height hides, so the rightmost
+   meter vanishes rather than being sliced through its bar, and the location, an
+   error and the stamp never wrap. */
+#status > * { flex-shrink: 0; white-space: nowrap; }
+#status #usage {
+  display: none; align-items: center; gap: 0 24px;
+  flex-wrap: wrap; height: 30px; overflow: hidden;
+  flex-shrink: 1; min-width: 0;
+  padding-left: 26px; border-left: 1px solid var(--border-subtle);
+}
+#status #usage.on { display: flex; }
+.u { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.u-bar {
+  width: 80px; height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-alt);
+  overflow: hidden;
+}
+.u-bar i { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--status-running); transition: width 0.4s ease-out; }
+.u-bar.busy i  { background: var(--status-stalled); }
+.u-bar.heavy i { background: var(--status-failed); }
+.u-sub { font-size: 20px; color: var(--fg-disabled); }
+
+/* ---------- column 3: reminders ---------- */
+#reminders { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+#reminders::-webkit-scrollbar { width: 4px; }
+#reminders::-webkit-scrollbar-track { background: transparent; }
+#reminders::-webkit-scrollbar-thumb { background: rgba(127,127,127,0.3); border-radius: var(--radius-pill); }
+
+.rem {
+  display: flex; align-items: center; gap: 18px;
+  min-height: 66px; padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: background 0.2s;
+  cursor: pointer;
+  /* touch-action so a drag on the touchscreen moves the row instead of being
+     eaten as a scroll gesture, user-select so it doesn't smear the text blue */
+  touch-action: none;
+  user-select: none; -webkit-user-select: none;
+}
+.rem:hover { background: var(--surface); }
+
+/* The dragged row follows the pointer and the rows it displaces slide out of
+   its way. Only translateY is ever animated — scaling a row would move the very
+   midpoints the drag measures against. Hit testing uses settled positions
+   captured at the moment the order changes, so a row mid-slide can't feed its
+   own animation back into the test and set off a jitter loop. */
+.rem.shifting { transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1); }
+.rem.dragging {
+  position: relative; z-index: 2;
+  background: var(--surface); cursor: grabbing;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.38);
+}
+
+.check {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 8px;
+  border: 2px solid var(--border-check);
+  background: transparent;
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  padding: 0;
+}
+.check svg { width: 18px; height: 18px; opacity: 0; transition: opacity 0.15s; }
+.rem.done .check { background: var(--accent); border-color: var(--accent); }
+.rem.done .check svg { opacity: 1; }
+
+.rem-text { font-size: 27px; font-weight: 500; letter-spacing: -0.3px; line-height: 1.25; }
+.rem-meta { font-size: 20px; color: var(--fg-muted); margin-top: 4px; letter-spacing: -0.1px; }
+.rem.done .rem-text { color: var(--fg-disabled); text-decoration: line-through; font-weight: 400; }
+.rem.done .rem-meta { color: var(--fg-disabled); }
+
+/* Always rendered, never hover-revealed: a button that appears on hover would
+   reflow the row on a board that has no reliable pointer anyway. */
+.rem-del {
+  width: 40px; height: 40px; flex-shrink: 0; margin-left: auto;
+  border: 0; background: transparent; padding: 0;
+  border-radius: 8px;
+  display: grid; place-items: center;
+  color: var(--fg-disabled);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.rem-del svg { width: 26px; height: 26px; }
+.rem-del:hover { color: var(--status-failed); background: var(--surface); }
+
+.hint {
+  flex-shrink: 0; margin-top: 18px; padding-top: 18px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 20px; color: var(--fg-disabled); letter-spacing: -0.1px;
+}
+.hint b { color: var(--fg-muted); font-weight: 500; }
+.empty { font-size: 22px; color: var(--fg-muted); line-height: 1.5; letter-spacing: -0.1px; padding: 12px; }
+
+/* ---------- type-to-add composer ----------
+   nothing on screen until a key is pressed or the column's empty space is clicked */
+#composer {
+  flex-shrink: 0;
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border-medium);
+  display: none;
+}
+#composer.on { display: block; animation: composerIn 0.18s ease-out; }
+@keyframes composerIn { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+
+.compose-line { display: flex; align-items: baseline; gap: 3px; min-height: 36px; }
+#draft {
+  font-size: 27px; font-weight: 500; letter-spacing: -0.3px;
+  color: var(--fg); word-break: break-word;
+}
+.caret {
+  display: inline-block; width: 2px; height: 28px;
+  background: var(--accent); transform: translateY(4px);
+  animation: caret 1.1s steps(1) infinite;
+}
+@keyframes caret { 0%, 50% { opacity: 1 } 51%, 100% { opacity: 0 } }
+#draft:empty + .caret { margin-left: 0; }
+.compose-foot {
+  display: flex; align-items: center; gap: 14px;
+  margin-top: 12px; font-size: 19px; color: var(--fg-disabled); letter-spacing: -0.1px;
+}
+.compose-foot .who {
+  color: var(--fg-muted);
+  background: var(--surface-active);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-pill);
+  padding: 3px 12px;
+}
+.compose-foot .spacer { flex: 1; }
+/* Sits between the who pill and the spacer, so the keys on the right never move. */
+.compose-foot .unsaved { color: var(--status-failed); }
+#composer.unsaved { border-color: var(--status-failed); }
+kbd {
+  font-family: inherit; font-size: 17px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  padding: 1px 7px; color: var(--fg-muted);
+}
+
+/* ---------- status bar ---------- */
+#status {
+  grid-column: 1 / -1;
+  border-top: 1px solid rgba(127, 127, 127, 0.14);
+  display: flex; align-items: center; gap: 26px;
+  padding: 0 32px;
+  font-size: 22px; color: var(--fg-muted); letter-spacing: -0.1px;
+  cursor: pointer; transition: background 0.2s;
+}
+#status:hover { background: var(--surface); }
+#status .spacer { flex: 1; }
+#status b { color: var(--fg-secondary); font-weight: 500; }
+.fail { color: var(--status-failed); }
+
+.theme-toggle { display: flex; align-items: center; gap: 4px; }
+.seg {
+  font-family: inherit; font-size: 22px; font-weight: 500; letter-spacing: -0.1px;
+  padding: 7px 16px; min-height: 40px;
+  display: flex; align-items: center; gap: 7px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.seg:hover { color: var(--fg-secondary); }
+.seg[aria-pressed="true"] { background: var(--surface-active); border-color: var(--border-medium); color: var(--fg); }
+.seg svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+@media (hover: none) {
+  .row:hover, #status:hover, .rem:hover { background: transparent; }
+}
+</style>
+</head>
+<body>
+<div id="toosmall">
+  <h1>Home Board</h1>
+  <p>This board is built for a 2560&times;720 wall display. On a screen this size nothing would be readable.</p>
+  <a href="/add">Open the reminders page</a>
+  <span class="note">Everything you add there shows on the board at home.</span>
+</div>
+<div id="stage">
+  <div id="offlinebar"></div>
+  <div class="board">
+
+    <section class="col">
+      <div class="clock"><span id="hhmm">--:--</span><span class="sec" id="ss">00</span></div>
+      <div class="datestamp" id="datestamp">&nbsp;</div>
+
+      <div class="wx">
+        <div class="wx-temp" id="temp">--<sup>&deg;</sup></div>
+        <div id="wxicon"></div>
+        <div style="min-width:0">
+          <div class="wx-cond" id="cond">&nbsp;</div>
+          <div class="wx-range" id="range">&nbsp;</div>
+        </div>
+      </div>
+
+      <div class="facts" id="facts"></div>
+      <div class="outlook">
+        <div class="rainline" id="rainline"></div>
+        <div class="strip" id="strip"></div>
+      </div>
+    </section>
+
+    <section class="col">
+      <div class="label">
+        <span class="dot dot-pulse" id="livedot"></span> departures
+        <span class="rule"></span>
+        <span class="meta" id="trafficAge"></span>
+      </div>
+      <div id="matchday"></div>
+      <div class="rows" id="rows"></div>
+    </section>
+
+    <section class="col">
+      <div class="label">reminders <span class="rule"></span> <span class="meta" id="remCount"></span></div>
+      <div id="reminders"></div>
+      <div id="composer">
+        <div class="compose-line"><span id="draft"></span><span class="caret"></span></div>
+        <div class="compose-foot">
+          <span class="who" id="composeWho"></span>
+          <span class="unsaved" id="unsavedNote"></span>
+          <span class="spacer"></span>
+          <span><kbd>Tab</kbd> who</span>
+          <span><kbd>Esc</kbd> cancel</span>
+          <span><kbd>Enter</kbd> add</span>
+        </div>
+      </div>
+      <div class="hint" id="hint"></div>
+    </section>
+
+    <div id="status" title="Tap to refresh now">
+      <span id="loc">&mdash;</span>
+      <span id="sun">&mdash;</span>
+      <span id="usage"></span>
+      <span class="spacer"></span>
+      <span id="errbar"></span>
+      <span class="theme-toggle" id="themeToggle">
+        <button class="seg" data-mode="auto" aria-pressed="false">auto</button>
+        <button class="seg" data-mode="light" aria-pressed="false" aria-label="Light theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></svg>
+          light
+        </button>
+        <button class="seg" data-mode="dark" aria-pressed="false" aria-label="Dark theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>
+          dark
+        </button>
+      </span>
+      <span id="stamp">&mdash;</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* The static <title> carries iCUE's tr() marker for the importer; in a browser that
+   would show literally, so put the real title back once the page is running. */
+document.title = "Home Board";
+
+/* iCUE calls these on load. Declaring them keeps it from erroring on a widget that
+   doesn't use the sensor pipeline; the board boots itself at the bottom either way. */
+if (typeof icueEvents === "undefined") { window.icueEvents = {}; }
+icueEvents.onICUEInitialized = function () {};
+icueEvents.onDataUpdated = function () {};
+
+/* Served by our own Node process (board on the PC, add page over the LAN) -> relative.
+   Anywhere else means the iCUE bundle, where relative resolves against the bundle and
+   never reaches the server, so point at the loopback explicitly. 127.0.0.1, not
+   localhost — that was the fix last time. The server sends CORS * so this is allowed. */
+const SERVED_BY_BOARD = location.port === "7879";
+const API = SERVED_BY_BOARD ? "" : "http://127.0.0.1:7879";
+const DEMO = new URLSearchParams(location.search).has("demo");
+
+/* Body text on the board is 27px. Below this scale it renders under 12px, the floor for
+   reading at arm's length, and tap targets fall under 44px with it.
+
+   Only ever applies in a browser pointed at the server. iCUE renders the widget at
+   whatever size its panel happens to be — well under half scale in the Dashboard
+   preview — and there the board must simply scale down, not be replaced by a notice
+   telling you to open a page on your phone. */
+const MIN_SCALE = 0.45;
+let stageScale = 1;   // set by fit(); the reminder drag needs it to size transforms
+
+function fit() {
+  const iw = document.documentElement.clientWidth;
+  const ih = document.documentElement.clientHeight;
+  const s = Math.min(iw / 2560, ih / 720);
+  stageScale = s;   // the drag converts screen pixels to stage pixels with this
+  const x = Math.round((iw - 2560 * s) / 2);
+  const y = Math.round((ih - 720 * s) / 2);
+  document.getElementById("stage").style.transform =
+    "translate(" + x + "px, " + y + "px) scale(" + s + ")";
+
+  const tooSmall = SERVED_BY_BOARD && s < MIN_SCALE;
+  document.getElementById("stage").style.display = tooSmall ? "none" : "";
+  const notice = document.getElementById("toosmall");
+  notice.style.display = tooSmall ? "flex" : "";
+  // same base as the API, so the link still resolves from an iCUE bundle
+  if (tooSmall) notice.querySelector("a").href = API + "/add";
+}
+addEventListener("resize", fit); fit();
+
+/* ---------- theme ----------
+   Dark is the default. "auto" still follows sunrise/sunset from the weather feed and
+   is one tap away, but it can't be the default while the toggle is unreachable in
+   iCUE — a board that decides to go light on its own with no way to override it is
+   worse than one that just stays dark. */
+let themeMode = "dark";
+let isDaylight = true;
+try {
+  const saved = localStorage.getItem("homeboard.theme");
+  if (saved === "auto" || saved === "light" || saved === "dark") themeMode = saved;
+} catch (e) {}
+
+function applyTheme() {
+  const resolved = themeMode === "auto" ? (isDaylight ? "light" : "dark") : themeMode;
+  document.documentElement.setAttribute("data-theme", resolved);
+  document.querySelectorAll(".seg").forEach(function (b) {
+    b.setAttribute("aria-pressed", String(b.dataset.mode === themeMode));
+  });
+}
+
+document.getElementById("themeToggle").addEventListener("click", function (ev) {
+  ev.stopPropagation();
+  const btn = ev.target.closest(".seg");
+  if (!btn) return;
+  themeMode = btn.dataset.mode;
+  try { localStorage.setItem("homeboard.theme", themeMode); } catch (e) {}
+  applyTheme();
+});
+applyTheme();
+
+/* ---------- clock ---------- */
+function tick() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  document.getElementById("hhmm").textContent = p(d.getHours()) + ":" + p(d.getMinutes());
+  document.getElementById("ss").textContent = p(d.getSeconds());
+  document.getElementById("datestamp").textContent =
+    d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+}
+tick(); setInterval(tick, 1000);
+
+const WX = {
+  0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+  45: "Fog", 48: "Freezing fog",
+  51: "Light drizzle", 53: "Drizzle", 55: "Heavy drizzle",
+  56: "Freezing drizzle", 57: "Freezing drizzle",
+  61: "Light rain", 63: "Rain", 65: "Heavy rain",
+  66: "Freezing rain", 67: "Freezing rain",
+  71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains",
+  80: "Light showers", 81: "Showers", 82: "Violent showers",
+  85: "Snow showers", 86: "Snow showers",
+  95: "Thunderstorm", 96: "Thunderstorm, hail", 99: "Thunderstorm, hail"
+};
+
+function icon(code, day) {
+  const wrap = (i) => '<svg width="58" height="58" viewBox="0 0 48 48" fill="none" stroke="var(--fg-secondary)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + i + '</svg>';
+  const cloud = '<path d="M13 36h20a7 7 0 0 0 .6-14A11 11 0 0 0 12 24a6 6 0 0 0 1 12Z"/>';
+  const sun = '<circle cx="24" cy="22" r="8"/><path d="M24 6v4M24 34v4M8 22h4M36 22h4M13 11l3 3M32 30l3 3M35 11l-3 3M16 30l-3 3"/>';
+  const moon = '<path d="M30 8a13 13 0 1 0 10 20A14 14 0 0 1 30 8Z"/>';
+  const rain = '<path d="M17 40l-2 5M25 40l-2 5M33 40l-2 5"/>';
+  const snow = '<path d="M17 42h.01M25 42h.01M33 42h.01"/>';
+  const bolt = '<path d="M26 34l-6 8h6l-2 7 8-10h-6l3-5"/>';
+  if (code === 0 || code === 1) return wrap(day ? sun : moon);
+  if (code === 2) return wrap((day ? sun : moon) + cloud);
+  if (code === 3) return wrap(cloud);
+  if (code === 45 || code === 48) return wrap('<path d="M8 18h32M12 26h28M8 34h32"/>');
+  if ((code >= 71 && code <= 77) || code >= 85) return wrap(cloud + snow);
+  if (code >= 95) return wrap(cloud + bolt);
+  return wrap(cloud + rain);
+}
+
+const COMPASS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const bearing = (d) => COMPASS[Math.round(d / 22.5) % 16];
+const hhmm = (iso) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+function ago(iso) {
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return m + "m ago";
+  const h = Math.round(m / 60);
+  if (h < 24) return h + "h ago";
+  return Math.round(h / 24) + "d ago";
+}
+
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 7"/></svg>';
+
+const BIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M9.5 6.5V4.6h5v1.9M6.6 6.5l.9 13h9l.9-13M10 10v6M14 10v6"/></svg>';
+
+const DROP ='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c3.4 4 6 7 6 10a6 6 0 0 1-12 0c0-3 2.6-6 6-10Z"/></svg>';
+const NODROP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.4"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12h2.4M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg>';
+const UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+const DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
+const FLAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></svg>';
+
+function minsUntil(t) {
+  return Math.round((new Date(t).getTime() - Date.now()) / 60000);
+}
+
+/* one sentence beats eight bars: say when it starts or stops */
+function renderRain(rain) {
+  const el = document.getElementById("rainline");
+  if (!rain) { el.innerHTML = ""; return; }
+
+  if (rain.state === "raining") {
+    el.className = "rainline";
+    el.innerHTML = rain.endsAt
+      ? DROP + "<span>Rain easing " + hhmm(rain.endsAt) + " <em>in " + minsUntil(rain.endsAt) + " min</em></span>"
+      : DROP + "<span>Rain " + rain.intensity + " <em>through " + hhmm(rain.horizonEnd) + "</em></span>";
+    return;
+  }
+
+  if (rain.state === "soon") {
+    const m = minsUntil(rain.startsAt);
+    el.className = "rainline";
+    el.innerHTML = DROP + "<span>Rain from " + hhmm(rain.startsAt) +
+      " <em>in " + (m < 1 ? "moments" : m + " min") + "</em></span>";
+    return;
+  }
+
+  el.className = "rainline dry";
+  el.innerHTML = NODROP + "<span>Dry until at least " + hhmm(rain.horizonEnd) + "</span>";
+}
+
+const BALL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.4l3.6 2.6-1.4 4.3H9.8L8.4 10 12 7.4Z"/><path d="M12 3.2v4.2M20.5 9.6l-4.9.4M18.3 19.4l-4.1-5.1M5.7 19.4l4.1-5.1M3.5 9.6l4.9.4"/></svg>';
+
+const NOTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5.6l11-2v12.1"/><circle cx="6.6" cy="18" r="2.6"/><circle cx="17.6" cy="15.7" r="2.6"/></svg>';
+
+/* only shows on the day, and only inside the alert window */
+function renderMatchday(list) {
+  const el = document.getElementById("matchday");
+  if (!list || !list.length) { paint(el, ""); return; }
+
+  paint(el, list.slice(0, 2).map(function (f) {
+    const ko = new Date(f.kickoff);
+    const mins = Math.round((ko.getTime() - Date.now()) / 60000);
+    const ends = f.kind === "event" ? "ended " : "finished ";
+    const starts = f.kind === "event" ? "starts " : "k.o. ";
+    const when = f.phase === "after"
+      ? ends + Math.abs(Math.round(mins / 60)) + "h ago"
+      : mins < 60 ? starts + "in " + mins + " min" : starts + hhmm(f.kickoff);
+    const hit = f.affects && f.affects.length ? '<span class="hit">on your route</span>' : "";
+    /* concerts carry a title; fixtures carry two team names */
+    const label = f.title ? esc(f.title) : esc(f.home) + " v " + esc(f.away);
+    return '<div class="match' + (f.severity === "high" ? " high" : "") + '">' +
+      (f.kind === "event" ? NOTE : BALL) +
+      '<span class="fix">' + label + '</span>' +
+      '<span class="at">' + esc(f.venue) + '</span>' + hit +
+      '<span class="ko">' + when + '</span>' +
+    '</div>';
+  }).join(""));
+}
+
+/* "Resets in 3 hr 21 min" -> "resets in 3h 21m". The scraper hands back whatever
+   claude.ai renders; this is a wall board, so shorten it rather than wrap it. */
+function tidyReset(s) {
+  if (!s) return "";
+  return String(s)
+    .replace(/^Resets\b/i, "resets")
+    .replace(/\s*\bhr(s)?\b/gi, "h")
+    .replace(/\s*\bmin(s)?\b/gi, "m")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function renderUsage(u) {
+  const el = document.getElementById("usage");
+  const meter = function (label, v, sub) {
+    if (typeof v !== "number") return ""; // scraper writes null when a meter is absent
+    const pct = Math.max(0, Math.min(100, v));
+    const band = pct >= 90 ? "heavy" : pct >= 70 ? "busy" : "";
+    return '<span class="u">' + label + ' <b>' + Math.round(pct) + '%</b>' +
+      '<span class="u-bar ' + band + '"><i style="width:' + pct + '%"></i></span>' +
+      (sub ? '<span class="u-sub">' + esc(sub) + '</span>' : '') +
+    '</span>';
+  };
+
+  const parts = u ? [
+    meter("session", u.session, tidyReset(u.sessionResetText)),
+    meter("week", u.weekAll, tidyReset(u.weekResetText)),
+    meter("fable", u.weekFable, ""),
+    meter("opus", u.weekOpus, ""),
+    meter("sonnet", u.weekSonnet, "")
+  ].filter(Boolean) : [];
+
+  if (!parts.length) { el.className = ""; paint(el, ""); return; }
+
+  el.className = "on";
+  paint(el, '<span>claude code</span>' + parts.join("") +
+    (u.scrapedAt ? '<span class="u-sub">' + ago(u.scrapedAt) + '</span>' : ''));
+}
+
+function trendMarkup(t) {
+  if (!t) return "";
+  if (t === "worsening") return '<span class="trend">' + UP + 'worsening</span>';
+  if (t === "clearing") return '<span class="trend">' + DOWN + 'clearing</span>';
+  return '<span class="trend">' + FLAT + 'steady</span>';
+}
+
+let latest = null;
+let rowsIntroDone = false;
+
+function render(d) {
+  latest = d;
+
+  if (d.weather) {
+    const w = d.weather;
+    if (w.sunrise && w.sunset) {
+      const now = Date.now();
+      isDaylight = now >= new Date(w.sunrise).getTime() && now < new Date(w.sunset).getTime();
+    } else if (typeof w.isDay === "boolean") {
+      isDaylight = w.isDay;
+    }
+    applyTheme();
+
+    document.getElementById("temp").innerHTML = Math.round(w.temp) + "<sup>&deg;</sup>";
+    document.getElementById("wxicon").innerHTML = icon(w.code, w.isDay);
+    document.getElementById("cond").textContent = WX[w.code] || "\u2014";
+    document.getElementById("range").textContent =
+      Math.round(w.high) + "\u00b0 / " + Math.round(w.low) + "\u00b0 today";
+
+    const facts = [
+      ["Feels like", Math.round(w.feels) + "\u00b0"],
+      ["Wind", Math.round(w.wind) + "<small>" + d.units.wind + " " + bearing(w.windDir) + "</small>"],
+      ["Gusting", Math.round(w.gust) + "<small>" + d.units.wind + "</small>"],
+      ["Rain today", (w.rainChance ?? 0) + "<small>%</small>"]
+    ];
+    document.getElementById("facts").innerHTML = facts
+      .map(([k, v]) => '<div><div class="fact-k">' + k + '</div><div class="fact-v">' + v + '</div></div>').join("");
+
+    document.getElementById("strip").innerHTML = w.hourly.map(function (h) {
+      const pop = h.pop || 0;
+      return '<div class="hr">' +
+        '<div class="hr-t">' + hhmm(h.time).slice(0, 2) + '</div>' +
+        '<div class="hr-bar"><i style="height:' + Math.max(pop, 2) + '%"></i></div>' +
+        '<div class="hr-temp">' + Math.round(h.temp) + '\u00b0</div>' +
+      '</div>';
+    }).join("");
+
+    renderRain(w.rain);
+
+    document.getElementById("sun").innerHTML =
+      "sunrise <b>" + hhmm(w.sunrise) + "</b> &middot; sunset <b>" + hhmm(w.sunset) + "</b>";
+  }
+
+  const unit = d.units.distance === "miles" ? "mi" : "km";
+  const rowsHtml = (d.traffic || []).map(function (r, i) {
+    const delay = 'style="animation-delay:' + (i * 40) + 'ms"';
+    if (r.error) {
+      return '<div class="row" ' + delay + '><div><div class="dest-name">' + r.label + '</div>' +
+        '<div class="dest-meta">' + r.sub + '</div></div><span></span><span></span>' +
+        '<span class="badge-wrap"><span class="badge dead">no route</span></span></div>';
+    }
+    const text = r.status === "clear" ? "on time" : "+" + r.delayMinutes + " " + r.status;
+    return '<div class="row ' + r.status + '" ' + delay + '>' +
+      '<div><div class="dest-name">' + r.label + '</div>' +
+      '<div class="dest-meta">' + r.sub + ' &middot; ' + r.distance + ' ' + unit + '</div></div>' +
+      '<div class="arrive">' + hhmm(r.arriveAt) + '<small>arrive</small></div>' +
+      '<div class="dur"><b>' + r.minutes + '</b><span>min</span></div>' +
+      '<span class="badge-wrap"><span class="badge ' + r.status + '">' + text + '</span>' +
+      (r.match ? '<span class="chip' + (r.matchSeverity === "high" ? " high" : "") + '">' +
+        (r.matchKind === "event" ? "event traffic" : "match traffic") + '</span>' : trendMarkup(r.trend)) + '</span>' +
+    '</div>';
+  }).join("");
+
+  const rowsEl = document.getElementById("rows");
+  if (paint(rowsEl, rowsHtml) && !rowsIntroDone) {
+    rowsIntroDone = true;
+    rowsEl.classList.add("intro");
+    setTimeout(function () { rowsEl.classList.remove("intro"); }, 700);
+  }
+
+  renderMatchday(d.matchday);
+  renderUsage(d.usage);
+  renderReminders(d);
+
+  document.getElementById("loc").innerHTML = "<b>" + d.home + "</b>";
+  const age = d.updated.traffic ? Math.round((Date.now() - d.updated.traffic) / 60000) : null;
+  document.getElementById("trafficAge").textContent =
+    age === null ? quietLabel(d) : age < 1 ? "just now" : age + "m ago";
+  paintConnection(d);
+}
+
+/* Traffic polling stops outside activeHours, so an empty departures column overnight
+   is the design working rather than a fault — but only if it says so. The column is
+   left genuinely empty; there is nothing useful to put in it and filler would be worse. */
+function quietLabel(d) {
+  const w = d && d.activeHours;
+  if (!w) return "no data";
+  const h = new Date().getHours();
+  const active = w.start <= w.end ? h >= w.start && h < w.end : h >= w.start || h < w.end;
+  return active ? "no data" : "resumes " + String(w.start).padStart(2, "0") + ":00";
+}
+
+/* The one place that says whether what's on screen is live, so the four signals can
+   never disagree with each other. The stamp used to be new Date() — it read "updated
+   15:36" no matter how long the server had been dead, which is half of why a stale
+   board looked fresh. It now shows when the server last actually replied. */
+function paintConnection(d) {
+  const dot = document.getElementById("livedot");
+  const errbar = document.getElementById("errbar");
+  const stamp = document.getElementById("stamp");
+
+  document.body.classList.toggle("offline", offline);
+  dot.classList.toggle("dot-offline", offline);
+  dot.classList.toggle("dot-pulse", !offline);
+
+  if (offline) {
+    const mins = lastGoodAt === null ? null : Math.round((Date.now() - lastGoodAt) / 60000);
+    errbar.innerHTML = '<span class="fail">server offline' +
+      (mins === null ? "" : " &middot; " + (mins < 1 ? "under a minute" : mins + "m")) + "</span>";
+    stamp.innerHTML = lastGoodAt === null
+      ? "<b>never connected</b>"
+      : "last reply <b>" + hhmm(lastGoodAt) + "</b>";
+    return;
+  }
+
+  const errs = Object.values((d && d.errors) || {});
+  errbar.innerHTML = errs.length ? '<span class="fail">' + errs[0] + '</span>' : "";
+  stamp.innerHTML = "updated <b>" + hhmm(lastGoodAt === null ? Date.now() : lastGoodAt) + "</b>";
+}
+
+function renderReminders(d) {
+  /* Repainting mid-drag would tear the row out from under the finger. */
+  if (dragRow) return;
+
+  /* The server hands these back in the order they're meant to be drawn, which
+     is what dragging rewrites. Only sort as a backstop, and never re-sort the
+     demo set, which has no order of its own. */
+  const list = (d.reminders || []).slice();
+  if (list.length && list.every((r) => typeof r.order === "number")) {
+    list.sort((a, b) => a.order - b.order);
+  }
+
+  const open = list.filter((r) => !r.doneAt).length;
+  document.getElementById("remCount").textContent = open ? open + " open" : "";
+
+  paint(document.getElementById("reminders"), list.length
+    ? list.map(function (r) {
+        const meta = [r.by, ago(r.createdAt)].filter(Boolean).join(" \u00b7 ");
+        return '<div class="rem' + (r.doneAt ? ' done' : '') + '" data-id="' + r.id + '">' +
+          '<button class="check" aria-checked="' + (r.doneAt ? 'true' : 'false') + '" role="checkbox" aria-label="Mark done">' + CHECK + '</button>' +
+          '<div style="min-width:0"><div class="rem-text">' + esc(r.text) + '</div>' +
+          '<div class="rem-meta">' + meta + '</div></div>' +
+          '<button class="rem-del" aria-label="Delete reminder">' + BIN + '</button>' +
+        '</div>';
+      }).join("")
+    : '<div class="empty">Nothing on the list.<br>Add something from your phone and it shows up here.</div>');
+
+  if (d.people && d.people.length) people = d.people;
+
+  document.getElementById("hint").innerHTML =
+    'just start typing to add' +
+    (d.addUrl ? ' &middot; or <b>' + d.addUrl.replace(/^https?:\/\//, "") + '</b>' : "");
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+/* Assigning innerHTML tears the nodes down and rebuilds them even when the markup is
+   identical, which restarts entry animations and resets any scroll position. The board
+   repolls every 15s but traffic only moves every 5 min, so most writes are byte-for-byte
+   the same. Only touch the DOM when something actually changed. */
+function paint(el, html) {
+  if (el.__html === html) return false;
+  el.__html = html;
+  el.innerHTML = html;
+  return true;
+}
+
+/* tap a reminder to tick it off — optimistic, syncs after */
+document.getElementById("reminders").addEventListener("click", async function (ev) {
+  const el = ev.target.closest(".rem");
+  if (!el || DEMO) return;
+  /* the click that closes a drag would otherwise tick off whatever was moved */
+  if (Date.now() - dragEndedAt < 300) return;
+  const id = el.dataset.id;
+
+  /* the bin sits inside the row, so it has to be claimed before the toggle */
+  if (ev.target.closest(".rem-del")) {
+    el.remove();
+    try {
+      await fetch(API + "/api/reminders/" + id + "?src=board", { method: "DELETE" });
+    } catch (e) {}
+    poll();
+    return;
+  }
+
+  el.classList.toggle("done");
+  try {
+    await fetch(API + "/api/reminders/" + id + "/toggle?src=board", { method: "POST" });
+  } catch (e) {}
+  poll();
+});
+
+/* ---------- drag to rearrange ----------
+   Pointer events rather than HTML5 drag-and-drop: dragstart/drop don't survive
+   iCUE's webview, while pointer events demonstrably do — they're what makes
+   tap-to-tick work. They also cover mouse and touch with one path.
+
+   The dragged row follows the pointer; the rows it displaces slide out of its
+   way by FLIP — measure where they land, put them back where they were with a
+   transform, then release it and let the transition play.
+
+   Two coordinate systems are in play. Pointer positions and rects are screen
+   pixels; a transform on a row is applied in the stage's own pixels, which are
+   smaller because the stage is scaled. Everything measured is therefore divided
+   by `stageScale` before it becomes a translateY. */
+const remList = document.getElementById("reminders");
+const SHUFFLE_MS = 160;   // must match .rem.shifting
+
+let dragRow = null;       // the row being carried, null when idle
+let dragging = false;     // has it passed the threshold and become a real drag
+let dragStartY = 0;
+let dragGrab = 0;         // where inside the row it was grabbed, screen px
+let dragSlotTop = 0;      // top of the slot it currently occupies, untransformed
+let slots = [];           // settled midpoints, only recomputed when order changes
+let dragEndedAt = 0;
+
+function rows() {
+  return Array.prototype.slice.call(remList.children).filter((n) => n.classList.contains("rem"));
+}
+
+/* Hit testing reads from this snapshot rather than from live rects: while a
+   shuffle is playing the live rects are somewhere between two slots, and
+   testing against a moving target makes rows flicker back and forth. */
+function measureSlots() {
+  return rows().map(function (el) {
+    const b = el.getBoundingClientRect();
+    return { el: el, mid: b.top + b.height / 2 };
+  });
+}
+
+function follow(desiredTop) {
+  dragRow.style.transform = "translateY(" + (desiredTop - dragSlotTop) / stageScale + "px)";
+}
+
+/* Move the dragged row to its new place and slide everything it displaced. */
+function reorderTo(target, before, desiredTop) {
+  const others = rows().filter((r) => r !== dragRow);
+  const was = new Map(others.map((r) => [r, r.getBoundingClientRect().top]));
+
+  remList.insertBefore(dragRow, before ? target : target.nextSibling);
+
+  // where everything settled, read before any transform is applied
+  const now = new Map(others.map((r) => [r, r.getBoundingClientRect()]));
+  dragRow.style.transform = "";
+  const mine = dragRow.getBoundingClientRect();
+  dragSlotTop = mine.top;
+  follow(desiredTop);
+
+  slots = others
+    .map((r) => ({ el: r, mid: now.get(r).top + now.get(r).height / 2 }))
+    .concat([{ el: dragRow, mid: dragSlotTop + mine.height / 2 }]);
+
+  others.forEach(function (r) {
+    const delta = (was.get(r) - now.get(r).top) / stageScale;
+    if (!delta) return;
+    r.classList.remove("shifting");            // put it back without animating
+    r.style.transform = "translateY(" + delta + "px)";
+    r.getBoundingClientRect();                 // flush, so the jump isn't merged
+    r.classList.add("shifting");               // then let it slide home
+    r.style.transform = "";
+  });
+}
+
+remList.addEventListener("pointerdown", function (ev) {
+  if (DEMO) return;
+  const row = ev.target.closest(".rem");
+  /* the check and the bin are targets in their own right, not drag handles */
+  if (!row || ev.target.closest(".check") || ev.target.closest(".rem-del")) return;
+  dragRow = row;
+  dragging = false;
+  dragStartY = ev.clientY;
+  try { row.setPointerCapture(ev.pointerId); } catch (e) {}
+});
+
+remList.addEventListener("pointermove", function (ev) {
+  if (!dragRow) return;
+  if (!dragging) {
+    /* under the threshold this is still a tap on its way to ticking a row */
+    if (Math.abs(ev.clientY - dragStartY) < 6) return;
+    dragging = true;
+    const box = dragRow.getBoundingClientRect();
+    dragGrab = dragStartY - box.top;
+    dragSlotTop = box.top;
+    slots = measureSlots();
+    dragRow.classList.remove("shifting");   // it tracks the pointer, never lags
+    dragRow.classList.add("dragging");
+  }
+
+  const desiredTop = ev.clientY - dragGrab;
+  follow(desiredTop);
+
+  const centre = desiredTop + dragRow.getBoundingClientRect().height / 2;
+  for (const s of slots) {
+    if (s.el === dragRow) continue;
+    const below = s.el.compareDocumentPosition(dragRow) & Node.DOCUMENT_POSITION_FOLLOWING;
+    if (centre < s.mid && below) { reorderTo(s.el, true, desiredTop); break; }
+    if (centre > s.mid && !below) { reorderTo(s.el, false, desiredTop); break; }
+  }
+});
+
+async function endDrag(ev) {
+  if (!dragRow) return;
+  const moved = dragging;
+  const row = dragRow;
+  try { row.releasePointerCapture(ev.pointerId); } catch (e) {}
+  dragRow = null;
+  dragging = false;
+
+  if (!moved) { row.classList.remove("dragging"); row.style.transform = ""; return; }
+
+  /* let it drop into the slot rather than blink into it */
+  row.classList.add("shifting");
+  row.style.transform = "";
+  setTimeout(function () {
+    row.classList.remove("shifting", "dragging");
+  }, SHUFFLE_MS + 40);
+
+  dragEndedAt = Date.now();
+
+  /* The DOM has been reordered behind paint()'s back, so its cached copy no
+     longer describes what's on screen. Clear it or the next identical render
+     is skipped and a rejected reorder would never be drawn back. */
+  remList.__html = null;
+
+  const ids = Array.prototype.slice.call(remList.children)
+    .filter((n) => n.classList.contains("rem"))
+    .map((n) => n.dataset.id);
+  try {
+    await fetch(API + "/api/reminders/reorder?src=board", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ids })
+    });
+  } catch (e) {}
+  /* poll() repaints the whole list, which would replace the row mid-drop and
+     cut the animation short. Let it land first. */
+  setTimeout(poll, SHUFFLE_MS + 60);
+}
+
+remList.addEventListener("pointerup", endDrag);
+remList.addEventListener("pointercancel", endDrag);
+
+/* ---------- type-to-add ----------
+   No input element and no focus required, so it works even where the page
+   never receives focus in the usual way. Any printable key starts a draft. */
+let draft = null;      // null = not composing
+let whoIdx = 0;
+let people = ["Me"];
+let idleTimer = null;
+
+function composerEl() { return document.getElementById("composer"); }
+
+function paintComposer() {
+  const el = composerEl();
+  if (draft === null) { el.classList.remove("on"); return; }
+  el.classList.add("on");
+  document.getElementById("draft").textContent = draft;
+  document.getElementById("composeWho").textContent = people[whoIdx] || "";
+}
+
+function openComposer(seed) {
+  draft = seed || "";
+  markUnsaved(false);
+  paintComposer();
+  resetIdle();
+}
+
+function markUnsaved(on) {
+  composerEl().classList.toggle("unsaved", on);
+  document.getElementById("unsavedNote").textContent = on ? "not saved · server offline" : "";
+}
+
+function closeComposer() {
+  draft = null;
+  clearTimeout(idleTimer);
+  markUnsaved(false);
+  paintComposer();
+}
+
+function resetIdle() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(closeComposer, 30000); // walk away and it tidies itself up
+}
+
+async function commitDraft() {
+  const text = (draft || "").trim();
+  if (!text || DEMO) { closeComposer(); return; }
+
+  /* This used to close the composer first and swallow the error, so a reminder typed
+     at a dead server disappeared on Enter with nothing said and nothing saved. Hold
+     the text in the composer and put the failure on the status bar instead — Enter
+     will retry it once the server is back. */
+  try {
+    const r = await fetch(API + "/api/reminders?src=board", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, by: people[whoIdx] })
+    });
+    if (!r.ok) throw new Error("bad response");
+  } catch (e) {
+    offline = true;
+    paintConnection(lastGood);
+    markUnsaved(true);
+    clearTimeout(idleTimer);   // don't let the 30s idle timer bin text we failed to save
+    return;
+  }
+  closeComposer();
+  poll();
+}
+
+addEventListener("keydown", function (e) {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+  if (draft === null) {
+    // a single printable character opens the composer with that character in it
+    if (e.key.length === 1 && e.key !== " ") { openComposer(e.key); e.preventDefault(); }
+    return;
+  }
+
+  resetIdle();
+
+  if (e.key === "Escape") { closeComposer(); e.preventDefault(); return; }
+  if (e.key === "Enter") { commitDraft(); e.preventDefault(); return; }
+  if (e.key === "Tab") {
+    whoIdx = (whoIdx + 1) % people.length;
+    paintComposer();
+    e.preventDefault();
+    return;
+  }
+  if (e.key === "Backspace") {
+    draft = draft.slice(0, -1);
+    if (!draft.length) closeComposer(); else paintComposer();
+    e.preventDefault();
+    return;
+  }
+  if (e.key.length === 1 && draft.length < 200) {
+    draft += e.key;
+    paintComposer();
+    e.preventDefault();
+  }
+});
+
+/* Clicking empty space in the reminders column opens the composer straight away,
+   empty and waiting, rather than only on the first keypress. Typing still goes
+   through the keydown listener above — still no <input>. Rows, their check and
+   bin, and the composer itself keep their own meaning. */
+remList.closest(".col").addEventListener("click", function (ev) {
+  if (draft !== null) return;
+  if (Date.now() - dragEndedAt < 300) return;   // the click that ends a drag
+  if (ev.target.closest(".rem, #composer")) return;
+  openComposer("");
+});
+
+function demoData() {
+  const now = Date.now();
+  const h = (n) => new Date(now + n * 3600000).toISOString();
+  return {
+    home: "Home",
+    units: { wind: "mph", distance: "miles" },
+    updated: { traffic: now - 90000 },
+    errors: {},
+    addUrl: "http://192.168.1.42:7879/add",
+    people: ["Alex", "Sam"],
+    weather: {
+      temp: 13.4, feels: 10.8, humidity: 78, code: 61, isDay: true,
+      wind: 17, gust: 31, windDir: 248, high: 15, low: 8,
+      sunrise: h(-8), sunset: h(6), uv: 3, rainChance: 80,
+      rain: { state: "soon", startsAt: h(0.62), horizonEnd: h(6), intensity: "moderate" },
+      hourly: [0,1,2,3,4,5,6,7].map((i) => ({ time: h(i), temp: 13 - i * 0.4, pop: [80,65,45,30,20,35,55,70][i] }))
+    },
+    traffic: [
+      { label: "Work", sub: "Central Station", minutes: 9, delayMinutes: 0, distance: 2.1, arriveAt: h(0.15), status: "clear", trend: "steady" },
+      { label: "Silverburn", sub: "Pollok", minutes: 24, delayMinutes: 5, distance: 8.6, arriveAt: h(0.4), status: "busy", trend: "clearing", match: true, matchSeverity: "high" },
+      { label: "Glasgow Airport", sub: "Paisley", minutes: 21, delayMinutes: 9, distance: 7.4, arriveAt: h(0.35), status: "heavy", trend: "worsening", match: true, matchSeverity: "high" }
+    ],
+    matchday: [
+      { id: "1", home: "Celtic", away: "Hibernian", venue: "Celtic Park", kickoff: h(2.1), phase: "before", severity: "high", affects: ["shops", "airport"] }
+    ],
+    reminders: [
+      { id: "1", text: "Buy cat food", by: "Sam", createdAt: h(-1.2), doneAt: null },
+      { id: "2", text: "Book MOT before the 14th", by: "Alex", createdAt: h(-6), doneAt: null },
+      { id: "3", text: "Renew the TV licence", by: "Alex", createdAt: h(-26), doneAt: null },
+      { id: "4", text: "Pick up parcel from the locker", by: "Sam", createdAt: h(-30), doneAt: null },
+      { id: "5", text: "Refill the coffee beans", by: "Alex", createdAt: h(-48), doneAt: h(-3) }
+    ]
+  };
+}
+
+function flagDemo() {
+  document.getElementById("errbar").innerHTML =
+    '<span style="color:var(--fg-disabled)">sample data &middot; server not connected</span>';
+}
+
+/* A dead server must never render as a live one. demoData() used to BE the failure
+   path, so a fabricated fixture — Celtic v Hibernian, a match that wasn't happening —
+   drew under a green pulsing dot and a fresh timestamp, indistinguishable from real.
+   It is reachable only via ?demo now.
+
+   On failure the last real payload stays up: a temperature from twenty minutes ago is
+   still worth having on a wall, and blanking the board loses information for no gain.
+   Everything that claims freshness switches over instead. Before the first successful
+   poll there is nothing real to show, so the markup's own "--" placeholders stand. */
+let lastGood = null;
+let lastGoodAt = null;
+let offline = false;
+
+async function poll() {
+  if (DEMO) { offline = false; render(demoData()); flagDemo(); return; }
+  try {
+    const r = await fetch(API + "/api/data", { cache: "no-store" });
+    if (!r.ok) throw new Error("bad response");
+    const d = await r.json();
+    lastGood = d;
+    lastGoodAt = Date.now();
+    offline = false;
+    render(d);
+  } catch (e) {
+    offline = true;
+    if (lastGood) render(lastGood);
+    else paintConnection(null);
+  }
+}
+poll();
+setInterval(poll, 15000);
+
+document.getElementById("status").addEventListener("click", async function () {
+  await fetch(API + "/api/refresh").catch(function () {});
+  poll();
+});
+</script>
+</body>
+</html>
